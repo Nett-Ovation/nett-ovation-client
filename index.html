@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avis de Passage - Nett'Ovation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        .avis {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Avis de Passage - <span id="clientName"></span></h1>
+    
+    <div class="section">
+        <h2>Ajouter un avis de passage</h2>
+        <form id="avisForm">
+            <input type="date" id="date" required>
+            <input type="time" id="heureDebut" required>
+            <input type="time" id="heureFin" required>
+            <textarea id="observations" placeholder="Observations" required></textarea>
+            <input type="datetime-local" id="prochaineIntervention" required>
+            <button type="submit">Ajouter l'avis</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2>Historique des avis</h2>
+        <div id="avisList"></div>
+    </div>
+
+    <div class="footer">
+        <p>Nett'Ovation - Le nettoyage à la hauteur de vos attentes !</p>
+        <p>Contact : <a href="mailto:info@nett-ovation.fr">info@nett-ovation.fr</a> | Tél : 07 82 03 05 02</p>
+    </div>
+
+    <script>
+        function getClientName() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('client') || 'Client inconnu';
+        }
+
+        function loadAvis() {
+            const clientName = getClientName();
+            const avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
+            const avisList = document.getElementById('avisList');
+            avisList.innerHTML = '';
+            avis.forEach(a => {
+                const avisElement = document.createElement('div');
+                avisElement.className = 'avis';
+                avisElement.innerHTML = `
+                    <h3>Intervention du ${new Date(a.date).toLocaleDateString()}</h3>
+                    <p>Heure de début : ${a.heureDebut}</p>
+                    <p>Heure de fin : ${a.heureFin}</p>
+                    <p>Observations : ${a.observations}</p>
+                    <p>Prochaine intervention : ${new Date(a.prochaineIntervention).toLocaleString()}</p>
+                `;
+                avisList.appendChild(avisElement);
+            });
+        }
+
+        document.getElementById('avisForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const clientName = getClientName();
+            const avisData = {
+                date: document.getElementById('date').value,
+                heureDebut: document.getElementById('heureDebut').value,
+                heureFin: document.getElementById('heureFin').value,
+                observations: document.getElementById('observations').value,
+                prochaineIntervention: document.getElementById('prochaineIntervention').value
+            };
+
+            const avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
+            avis.push(avisData);
+            localStorage.setItem(`avis_${clientName}`, JSON.stringify(avis));
+
+            loadAvis();
+            document.getElementById('avisForm').reset();
+            alert('Avis de passage ajouté avec succès.');
+        });
+
+        const clientName = getClientName();
+        document.getElementById('clientName').textContent = clientName;
+        loadAvis();
+    </script>
+</body>
+</html>
