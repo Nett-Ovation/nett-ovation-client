@@ -38,6 +38,10 @@
             padding: 10px;
             margin-bottom: 10px;
         }
+        .prochaine-intervention {
+            background-color: #e6f7ff;
+            border: 1px solid #91d5ff;
+        }
         .footer {
             margin-top: 20px;
             text-align: center;
@@ -79,21 +83,47 @@
 
         function loadAvis() {
             const clientName = getClientName();
-            const avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
+            let avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
             const avisList = document.getElementById('avisList');
             avisList.innerHTML = '';
+
+            // Trier les avis par date, du plus récent au plus ancien
+            avis.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const now = new Date();
+            let prochaineIntervention = null;
+
             avis.forEach(a => {
                 const avisElement = document.createElement('div');
                 avisElement.className = 'avis';
+
+                const dateIntervention = new Date(a.date);
+                const dateProchaineIntervention = new Date(a.prochaineIntervention);
+
+                if (dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
+                    prochaineIntervention = dateProchaineIntervention;
+                }
+
                 avisElement.innerHTML = `
-                    <h3>Intervention du ${new Date(a.date).toLocaleDateString()}</h3>
+                    <h3>Intervention du ${dateIntervention.toLocaleDateString()}</h3>
                     <p>Heure de début : ${a.heureDebut}</p>
                     <p>Heure de fin : ${a.heureFin}</p>
                     <p>Observations : ${a.observations}</p>
-                    <p>Prochaine intervention : ${new Date(a.prochaineIntervention).toLocaleString()}</p>
+                    <p>Prochaine intervention prévue : ${dateProchaineIntervention.toLocaleString()}</p>
                 `;
                 avisList.appendChild(avisElement);
             });
+
+            // Afficher la prochaine intervention en haut de la liste
+            if (prochaineIntervention) {
+                const prochaineInterventionElement = document.createElement('div');
+                prochaineInterventionElement.className = 'avis prochaine-intervention';
+                prochaineInterventionElement.innerHTML = `
+                    <h3>Prochaine intervention prévue</h3>
+                    <p>Date et heure : ${prochaineIntervention.toLocaleString()}</p>
+                `;
+                avisList.insertBefore(prochaineInterventionElement, avisList.firstChild);
+            }
         }
 
         document.getElementById('avisForm').addEventListener('submit', (e) => {
