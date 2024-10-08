@@ -19,7 +19,7 @@
             margin-bottom: 20px;
             background-color: #f9f9f9;
         }
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -42,6 +42,10 @@
             background-color: #e6f7ff;
             border: 1px solid #91d5ff;
         }
+        .a-prevoir {
+            background-color: #fff7e6;
+            border: 1px solid #ffd591;
+        }
         .footer {
             margin-top: 20px;
             text-align: center;
@@ -60,7 +64,13 @@
             <input type="time" id="heureDebut" required>
             <input type="time" id="heureFin" required>
             <textarea id="observations" placeholder="Observations" required></textarea>
-            <input type="datetime-local" id="prochaineIntervention" required>
+            <input type="text" id="intervenant" placeholder="Nom de l'intervenant" required>
+            <select id="typeIntervention" required>
+                <option value="">Choisir le type d'intervention</option>
+                <option value="prochaine">Prochaine intervention</option>
+                <option value="aPrevoir">À prévoir</option>
+            </select>
+            <input type="datetime-local" id="dateIntervention" required>
             <button type="submit">Ajouter l'avis</button>
         </form>
     </div>
@@ -92,16 +102,19 @@
 
             const now = new Date();
             let prochaineIntervention = null;
+            let interventionsAPrevoir = [];
 
             avis.forEach(a => {
                 const avisElement = document.createElement('div');
                 avisElement.className = 'avis';
 
                 const dateIntervention = new Date(a.date);
-                const dateProchaineIntervention = new Date(a.prochaineIntervention);
+                const dateProchaineIntervention = new Date(a.dateIntervention);
 
-                if (dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
+                if (a.typeIntervention === 'prochaine' && dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
                     prochaineIntervention = dateProchaineIntervention;
+                } else if (a.typeIntervention === 'aPrevoir') {
+                    interventionsAPrevoir.push(a);
                 }
 
                 avisElement.innerHTML = `
@@ -109,7 +122,8 @@
                     <p>Heure de début : ${a.heureDebut}</p>
                     <p>Heure de fin : ${a.heureFin}</p>
                     <p>Observations : ${a.observations}</p>
-                    <p>Prochaine intervention prévue : ${dateProchaineIntervention.toLocaleString()}</p>
+                    <p>Intervenant : ${a.intervenant}</p>
+                    <p>${a.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : ${dateProchaineIntervention.toLocaleString()}</p>
                 `;
                 avisList.appendChild(avisElement);
             });
@@ -124,6 +138,18 @@
                 `;
                 avisList.insertBefore(prochaineInterventionElement, avisList.firstChild);
             }
+
+            // Afficher les interventions à prévoir
+            interventionsAPrevoir.forEach(a => {
+                const aPrevoirElement = document.createElement('div');
+                aPrevoirElement.className = 'avis a-prevoir';
+                aPrevoirElement.innerHTML = `
+                    <h3>Intervention à prévoir</h3>
+                    <p>Date et heure : ${new Date(a.dateIntervention).toLocaleString()}</p>
+                    <p>Observations : ${a.observations}</p>
+                `;
+                avisList.insertBefore(aPrevoirElement, avisList.firstChild);
+            });
         }
 
         document.getElementById('avisForm').addEventListener('submit', (e) => {
@@ -134,7 +160,9 @@
                 heureDebut: document.getElementById('heureDebut').value,
                 heureFin: document.getElementById('heureFin').value,
                 observations: document.getElementById('observations').value,
-                prochaineIntervention: document.getElementById('prochaineIntervention').value
+                intervenant: document.getElementById('intervenant').value,
+                typeIntervention: document.getElementById('typeIntervention').value,
+                dateIntervention: document.getElementById('dateIntervention').value
             };
 
             const avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
