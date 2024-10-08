@@ -70,7 +70,7 @@
                 <option value="prochaine">Prochaine intervention</option>
                 <option value="aPrevoir">À prévoir</option>
             </select>
-            <input type="datetime-local" id="dateIntervention" required>
+            <input type="datetime-local" id="dateIntervention">
             <button type="submit">Ajouter l'avis</button>
         </form>
     </div>
@@ -102,19 +102,21 @@
 
             const now = new Date();
             let prochaineIntervention = null;
-            let interventionsAPrevoir = [];
+            let interventionAPrevoir = false;
 
             avis.forEach(a => {
                 const avisElement = document.createElement('div');
                 avisElement.className = 'avis';
 
                 const dateIntervention = new Date(a.date);
-                const dateProchaineIntervention = new Date(a.dateIntervention);
 
-                if (a.typeIntervention === 'prochaine' && dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
-                    prochaineIntervention = dateProchaineIntervention;
+                if (a.typeIntervention === 'prochaine' && a.dateIntervention) {
+                    const dateProchaineIntervention = new Date(a.dateIntervention);
+                    if (dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
+                        prochaineIntervention = dateProchaineIntervention;
+                    }
                 } else if (a.typeIntervention === 'aPrevoir') {
-                    interventionsAPrevoir.push(a);
+                    interventionAPrevoir = true;
                 }
 
                 avisElement.innerHTML = `
@@ -123,7 +125,8 @@
                     <p>Heure de fin : ${a.heureFin}</p>
                     <p>Observations : ${a.observations}</p>
                     <p>Intervenant : ${a.intervenant}</p>
-                    <p>${a.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : ${dateProchaineIntervention.toLocaleString()}</p>
+                    <p>${a.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : 
+                       ${a.dateIntervention ? new Date(a.dateIntervention).toLocaleString() : 'Date à déterminer'}</p>
                 `;
                 avisList.appendChild(avisElement);
             });
@@ -139,18 +142,28 @@
                 avisList.insertBefore(prochaineInterventionElement, avisList.firstChild);
             }
 
-            // Afficher les interventions à prévoir
-            interventionsAPrevoir.forEach(a => {
+            // Afficher l'intervention à prévoir si nécessaire
+            if (interventionAPrevoir) {
                 const aPrevoirElement = document.createElement('div');
                 aPrevoirElement.className = 'avis a-prevoir';
                 aPrevoirElement.innerHTML = `
                     <h3>Intervention à prévoir</h3>
-                    <p>Date et heure : ${new Date(a.dateIntervention).toLocaleString()}</p>
-                    <p>Observations : ${a.observations}</p>
+                    <p>La prochaine intervention est à prévoir. Nous vous contacterons pour fixer une date.</p>
                 `;
                 avisList.insertBefore(aPrevoirElement, avisList.firstChild);
-            });
+            }
         }
+
+        document.getElementById('typeIntervention').addEventListener('change', function() {
+            const dateInterventionField = document.getElementById('dateIntervention');
+            if (this.value === 'aPrevoir') {
+                dateInterventionField.removeAttribute('required');
+                dateInterventionField.style.display = 'none';
+            } else {
+                dateInterventionField.setAttribute('required', '');
+                dateInterventionField.style.display = 'block';
+            }
+        });
 
         document.getElementById('avisForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -162,7 +175,7 @@
                 observations: document.getElementById('observations').value,
                 intervenant: document.getElementById('intervenant').value,
                 typeIntervention: document.getElementById('typeIntervention').value,
-                dateIntervention: document.getElementById('dateIntervention').value
+                dateIntervention: document.getElementById('dateIntervention').value || null
             };
 
             const avis = JSON.parse(localStorage.getItem(`avis_${clientName}`)) || [];
