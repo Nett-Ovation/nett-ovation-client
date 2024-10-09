@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avis de Passage - Nett'Ovation</title>
+    <title>Page Client - Nett'Ovation</title>
     <style>
-        /* Styles précédents inchangés */
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; }
+        input, textarea, select, button { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        .avis-item { background-color: #f9f9f9; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <h1>Avis de Passage - <span id="clientName"></span></h1>
+    <h1>Page Client - <span id="clientName"></span></h1>
     
+    <div class="section" id="clientInfo">
+        <h2>Informations du client</h2>
+        <!-- Les informations du client seront insérées ici -->
+    </div>
+
     <div class="section">
         <h2>Ajouter un avis de passage</h2>
         <form id="avisForm">
@@ -20,7 +29,6 @@
             <textarea id="observations" placeholder="Observations" required></textarea>
             <input type="text" id="intervenant" placeholder="Nom de l'intervenant" required>
             <select id="typeIntervention" required>
-                <option value="">Choisir le type d'intervention</option>
                 <option value="prochaine">Prochaine intervention</option>
                 <option value="aPrevoir">À prévoir</option>
             </select>
@@ -34,126 +42,73 @@
         <div id="avisList"></div>
     </div>
 
-    <div class="footer">
-        <p>Nett'Ovation - Le nettoyage à la hauteur de vos attentes !</p>
-        <p>Contact : <a href="mailto:info@nett-ovation.fr">info@nett-ovation.fr</a> | Tél : 07 82 03 05 02</p>
-    </div>
-
     <script>
-        function getClientId() {
+        let clientId;
+
+        function loadClientInfo() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('client');
-        }
-
-        function getClientInfo(clientId) {
+            clientId = urlParams.get('id');
             const clients = JSON.parse(localStorage.getItem('clients')) || [];
-            return clients.find(client => client.id === clientId);
-        }
-
-        function loadAvis() {
-            const clientId = getClientId();
-            const client = getClientInfo(clientId);
-            if (!client) {
-                alert("Client non trouvé");
-                return;
-            }
-
-            document.getElementById('clientName').textContent = client.nomPrenom;
-
-            let avis = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
-            const avisList = document.getElementById('avisList');
-            avisList.innerHTML = '';
-
-            // Trier les avis par date, du plus récent au plus ancien
-            avis.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            const now = new Date();
-            let prochaineIntervention = null;
-            let interventionAPrevoir = false;
-
-            avis.forEach(a => {
-                const avisElement = document.createElement('div');
-                avisElement.className = 'avis';
-
-                const dateIntervention = new Date(a.date);
-
-                if (a.typeIntervention === 'prochaine' && a.dateIntervention) {
-                    const dateProchaineIntervention = new Date(a.dateIntervention);
-                    if (dateProchaineIntervention > now && (!prochaineIntervention || dateProchaineIntervention < prochaineIntervention)) {
-                        prochaineIntervention = dateProchaineIntervention;
-                    }
-                } else if (a.typeIntervention === 'aPrevoir') {
-                    interventionAPrevoir = true;
-                }
-
-                avisElement.innerHTML = `
-                    <h3>Intervention du ${dateIntervention.toLocaleDateString()}</h3>
-                    <p>Heure de début : ${a.heureDebut}</p>
-                    <p>Heure de fin : ${a.heureFin}</p>
-                    <p>Observations : ${a.observations}</p>
-                    <p>Intervenant : ${a.intervenant}</p>
-                    <p>${a.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : 
-                       ${a.dateIntervention ? new Date(a.dateIntervention).toLocaleString() : 'Date à déterminer'}</p>
+            const client = clients.find(c => c.id === clientId);
+            if (client) {
+                document.getElementById('clientName').textContent = client.nomPrenom;
+                document.getElementById('clientInfo').innerHTML += `
+                    <p>Société : ${client.societe || 'N/A'}</p>
+                    <p>Adresse : ${client.adresse}</p>
+                    <p>Téléphone : ${client.numero}</p>
+                    <p>Email : ${client.email}</p>
                 `;
-                avisList.appendChild(avisElement);
-            });
-
-            // Afficher la prochaine intervention en haut de la liste
-            if (prochaineIntervention) {
-                const prochaineInterventionElement = document.createElement('div');
-                prochaineInterventionElement.className = 'avis prochaine-intervention';
-                prochaineInterventionElement.innerHTML = `
-                    <h3>Prochaine intervention prévue</h3>
-                    <p>Date et heure : ${prochaineIntervention.toLocaleString()}</p>
-                `;
-                avisList.insertBefore(prochaineInterventionElement, avisList.firstChild);
-            }
-
-            // Afficher l'intervention à prévoir si nécessaire
-            if (interventionAPrevoir) {
-                const aPrevoirElement = document.createElement('div');
-                aPrevoirElement.className = 'avis a-prevoir';
-                aPrevoirElement.innerHTML = `
-                    <h3>Intervention à prévoir</h3>
-                    <p>La prochaine intervention est à prévoir. Nous vous contacterons pour fixer une date.</p>
-                `;
-                avisList.insertBefore(aPrevoirElement, avisList.firstChild);
-            }
-        }
-
-        document.getElementById('typeIntervention').addEventListener('change', function() {
-            const dateInterventionField = document.getElementById('dateIntervention');
-            if (this.value === 'aPrevoir') {
-                dateInterventionField.removeAttribute('required');
-                dateInterventionField.style.display = 'none';
             } else {
-                dateInterventionField.setAttribute('required', '');
-                dateInterventionField.style.display = 'block';
+                alert('Client non trouvé');
             }
-        });
+        }
 
-        document.getElementById('avisForm').addEventListener('submit', (e) => {
+        function saveAvis(e) {
             e.preventDefault();
-            const clientId = getClientId();
-            const avisData = {
+            const avis = {
                 date: document.getElementById('date').value,
                 heureDebut: document.getElementById('heureDebut').value,
                 heureFin: document.getElementById('heureFin').value,
                 observations: document.getElementById('observations').value,
                 intervenant: document.getElementById('intervenant').value,
                 typeIntervention: document.getElementById('typeIntervention').value,
-                dateIntervention: document.getElementById('dateIntervention').value || null
+                dateIntervention: document.getElementById('dateIntervention').value
             };
-
-            const avis = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
-            avis.push(avisData);
-            localStorage.setItem(`avis_${clientId}`, JSON.stringify(avis));
-
-            loadAvis();
+            let avisClient = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
+            avisClient.push(avis);
+            localStorage.setItem(`avis_${clientId}`, JSON.stringify(avisClient));
             document.getElementById('avisForm').reset();
-            alert('Avis de passage ajouté avec succès.');
+            loadAvis();
+        }
+
+        function loadAvis() {
+            const avisClient = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
+            const avisList = document.getElementById('avisList');
+            avisList.innerHTML = '';
+            avisClient.sort((a, b) => new Date(b.date) - new Date(a.date));
+            avisClient.forEach(avis => {
+                const avisElement = document.createElement('div');
+                avisElement.className = 'avis-item';
+                avisElement.innerHTML = `
+                    <h3>Intervention du ${new Date(avis.date).toLocaleDateString()}</h3>
+                    <p>Heure : ${avis.heureDebut} - ${avis.heureFin}</p>
+                    <p>Observations : ${avis.observations}</p>
+                    <p>Intervenant : ${avis.intervenant}</p>
+                    <p>${avis.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : 
+                       ${avis.dateIntervention ? new Date(avis.dateIntervention).toLocaleString() : 'Date à déterminer'}</p>
+                `;
+                avisList.appendChild(avisElement);
+            });
+        }
+
+        document.getElementById('avisForm').addEventListener('submit', saveAvis);
+        document.getElementById('typeIntervention').addEventListener('change', function() {
+            const dateInterventionField = document.getElementById('dateIntervention');
+            dateInterventionField.style.display = this.value === 'aPrevoir' ? 'none' : 'block';
+            dateInterventionField.required = this.value !== 'aPrevoir';
         });
 
+        loadClientInfo();
         loadAvis();
     </script>
 </body>
