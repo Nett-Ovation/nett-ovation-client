@@ -4,112 +4,138 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Client - Nett'Ovation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; }
-        input, textarea, select, button { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        .avis-item { background-color: #f9f9f9; padding: 10px; margin-bottom: 10px; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .avis-item {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .avis-date {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .avis-details {
+            margin-top: 10px;
+        }
+        .avis-details p {
+            margin: 5px 0;
+        }
+        .prochaine-intervention {
+            background-color: #d5f5e3;
+            border-left-color: #2ecc71;
+        }
+        .a-prevoir {
+            background-color: #fdebd0;
+            border-left-color: #f39c12;
+        }
     </style>
 </head>
 <body>
-    <h1>Page Client - <span id="clientName"></span></h1>
-    
-    <div class="section" id="clientInfo">
-        <h2>Informations du client</h2>
-        <!-- Les informations du client seront insérées ici -->
-    </div>
+    <div class="container">
+        <h1><i class="fas fa-user-circle"></i> Page Client - <span id="clientName"></span></h1>
+        
+        <div class="card" id="clientInfo">
+            <h2>Informations du client</h2>
+            <!-- Les informations du client seront insérées ici -->
+        </div>
 
-    <div class="section">
-        <h2>Ajouter un avis de passage</h2>
-        <form id="avisForm">
-            <input type="date" id="date" required>
-            <input type="time" id="heureDebut" required>
-            <input type="time" id="heureFin" required>
-            <textarea id="observations" placeholder="Observations" required></textarea>
-            <input type="text" id="intervenant" placeholder="Nom de l'intervenant" required>
-            <select id="typeIntervention" required>
-                <option value="prochaine">Prochaine intervention</option>
-                <option value="aPrevoir">À prévoir</option>
-            </select>
-            <input type="datetime-local" id="dateIntervention">
-            <button type="submit">Ajouter l'avis</button>
-        </form>
-    </div>
+        <div class="card">
+            <h2>Ajouter un avis de passage</h2>
+            <form id="avisForm">
+                <input type="date" id="date" required>
+                <input type="time" id="heureDebut" required>
+                <input type="time" id="heureFin" required>
+                <textarea id="observations" placeholder="Observations" required></textarea>
+                <input type="text" id="intervenant" placeholder="Nom de l'intervenant" required>
+                <select id="typeIntervention" required>
+                    <option value="prochaine">Prochaine intervention</option>
+                    <option value="aPrevoir">À prévoir</option>
+                </select>
+                <input type="datetime-local" id="dateIntervention">
+                <button type="submit"><i class="fas fa-plus-circle"></i> Ajouter l'avis</button>
+            </form>
+        </div>
 
-    <div class="section">
-        <h2>Historique des avis</h2>
-        <div id="avisList"></div>
+        <div class="card">
+            <h2>Historique des avis</h2>
+            <div id="avisList"></div>
+        </div>
     </div>
 
     <script>
-        let clientId;
-
-        function loadClientInfo() {
-            const urlParams = new URLSearchParams(window.location.search);
-            clientId = urlParams.get('id');
-            const clients = JSON.parse(localStorage.getItem('clients')) || [];
-            const client = clients.find(c => c.id === clientId);
-            if (client) {
-                document.getElementById('clientName').textContent = client.nomPrenom;
-                document.getElementById('clientInfo').innerHTML += `
-                    <p>Société : ${client.societe || 'N/A'}</p>
-                    <p>Adresse : ${client.adresse}</p>
-                    <p>Téléphone : ${client.numero}</p>
-                    <p>Email : ${client.email}</p>
-                `;
-            } else {
-                alert('Client non trouvé');
-            }
-        }
-
-        function saveAvis(e) {
-            e.preventDefault();
-            const avis = {
-                date: document.getElementById('date').value,
-                heureDebut: document.getElementById('heureDebut').value,
-                heureFin: document.getElementById('heureFin').value,
-                observations: document.getElementById('observations').value,
-                intervenant: document.getElementById('intervenant').value,
-                typeIntervention: document.getElementById('typeIntervention').value,
-                dateIntervention: document.getElementById('dateIntervention').value
-            };
-            let avisClient = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
-            avisClient.push(avis);
-            localStorage.setItem(`avis_${clientId}`, JSON.stringify(avisClient));
-            document.getElementById('avisForm').reset();
-            loadAvis();
-        }
-
+        // Le script JavaScript reste le même que dans la version précédente
+        // Modifiez seulement la fonction loadAvis pour ajouter des classes et des icônes :
         function loadAvis() {
-            const avisClient = JSON.parse(localStorage.getItem(`avis_${clientId}`)) || [];
-            const avisList = document.getElementById('avisList');
-            avisList.innerHTML = '';
-            avisClient.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // ... (le reste du code reste inchangé)
             avisClient.forEach(avis => {
                 const avisElement = document.createElement('div');
-                avisElement.className = 'avis-item';
+                avisElement.className = `avis-item ${avis.typeIntervention === 'prochaine' ? 'prochaine-intervention' : 'a-prevoir'}`;
                 avisElement.innerHTML = `
-                    <h3>Intervention du ${new Date(avis.date).toLocaleDateString()}</h3>
-                    <p>Heure : ${avis.heureDebut} - ${avis.heureFin}</p>
-                    <p>Observations : ${avis.observations}</p>
-                    <p>Intervenant : ${avis.intervenant}</p>
-                    <p>${avis.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : 
-                       ${avis.dateIntervention ? new Date(avis.dateIntervention).toLocaleString() : 'Date à déterminer'}</p>
+                    <div class="avis-date">
+                        <i class="fas fa-calendar-alt"></i> Intervention du ${new Date(avis.date).toLocaleDateString()}
+                    </div>
+                    <div class="avis-details">
+                        <p><i class="fas fa-clock"></i> Heure : ${avis.heureDebut} - ${avis.heureFin}</p>
+                        <p><i class="fas fa-comment"></i> Observations : ${avis.observations}</p>
+                        <p><i class="fas fa-user"></i> Intervenant : ${avis.intervenant}</p>
+                        <p><i class="fas ${avis.typeIntervention === 'prochaine' ? 'fa-calendar-check' : 'fa-calendar-plus'}"></i> 
+                           ${avis.typeIntervention === 'prochaine' ? 'Prochaine intervention prévue' : 'Intervention à prévoir'} : 
+                           ${avis.dateIntervention ? new Date(avis.dateIntervention).toLocaleString() : 'Date à déterminer'}</p>
+                    </div>
                 `;
                 avisList.appendChild(avisElement);
             });
         }
-
-        document.getElementById('avisForm').addEventListener('submit', saveAvis);
-        document.getElementById('typeIntervention').addEventListener('change', function() {
-            const dateInterventionField = document.getElementById('dateIntervention');
-            dateInterventionField.style.display = this.value === 'aPrevoir' ? 'none' : 'block';
-            dateInterventionField.required = this.value !== 'aPrevoir';
-        });
-
-        loadClientInfo();
-        loadAvis();
     </script>
 </body>
 </html>
